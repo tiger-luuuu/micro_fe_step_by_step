@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>微前端最小实现</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+    }
+
+    /* 顶部导航栏 */
+    .navbar {
+      background: #1a1a2e;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      height: 56px;
+      gap: 24px;
+    }
+    .navbar-brand {
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+      margin-right: 16px;
+    }
+    .nav-link {
+      color: #aaa;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      font-size: 14px;
+    }
+    .nav-link:hover {
+      color: white;
+      background: rgba(255,255,255,0.1);
+    }
+    .nav-link.active {
+      color: white;
+      background: rgba(255,255,255,0.15);
+    }
+
+    /* 主内容区 */
+    .main-content {
+      max-width: 900px;
+      margin: 32px auto;
+      padding: 0 24px;
+    }
+
+    /* 子应用挂载容器 */
+    #app-container {
+      min-height: 200px;
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+
+    /* 默认占位内容 */
+    .placeholder {
+      text-align: center;
+      padding: 40px;
+      color: #aaa;
+    }
+    .placeholder h3 { margin: 0 0 8px 0; font-size: 18px; }
+    .placeholder p { margin: 0; font-size: 14px; }
+
+    /* 说明信息 */
+    .info-box {
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: #fffbeb;
+      border: 1px solid #fed7aa;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #92400e;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 主应用导航栏 -->
+  <nav class="navbar">
+    <span class="navbar-brand">🧩 微前端 Demo</span>
+    <a href="#/vue" class="nav-link">Vue 子应用</a>
+    <a href="#/react" class="nav-link">React 子应用</a>
+    <a href="#/" class="nav-link">主页</a>
+  </nav>
+
+  <!-- 主内容区 -->
+  <div class="main-content">
+    <div class="info-box">
+      💡 点击上方导航链接，观察子应用的加载、挂载和卸载过程。打开浏览器控制台（F12）可以看到完整的生命周期日志。
+    </div>
+
+    <!-- 子应用挂载容器：这是留给子应用渲染内容的"插槽" -->
+    <div id="app-container">
+      <div class="placeholder">
+        <h3>👆 请点击上方导航</h3>
+        <p>选择一个子应用查看效果</p>
+      </div>
+    </div>
+  </div>
+
+  <!--
+    使用 ES Module 加载主应用脚本。
+    type="module" 支持 import/export 语法，且自动延迟执行（相当于 defer）。
+  -->
+  <script type="module" src="/main-app/main.js"></script>
+
+  <!-- 高亮当前激活的导航链接 -->
+  <script>
+    function updateActiveNav() {
+      document.querySelectorAll('.nav-link').forEach(link => {
+        const href = link.getAttribute('href')
+        if (href === '#/' || href === window.location.hash) {
+          link.classList.toggle('active', href === window.location.hash || (href === '#/' && !window.location.hash))
+        } else {
+          link.classList.remove('active')
+        }
+      })
+    }
+    window.addEventListener('hashchange', updateActiveNav)
+    updateActiveNav()
+  </script>
+
+</body>
+</html>

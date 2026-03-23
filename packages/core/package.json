@@ -1,0 +1,7 @@
+{
+  "name": "@micro-fe/core",
+  "version": "1.0.0",
+  "description": "微前端核心框架",
+  "main": "src/index.js",
+  "type": "module"
+}

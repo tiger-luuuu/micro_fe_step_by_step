@@ -1,0 +1,9 @@
+{
+  "name": "micro-fe",
+  "version": "1.0.0",
+  "description": "微前端技术原理解构 — 最小实现",
+  "private": true,
+  "scripts": {
+    "serve": "npx serve packages -p 3000 --cors"
+  }
+}
