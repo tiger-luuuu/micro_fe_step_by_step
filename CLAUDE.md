@@ -27,6 +27,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 应用间路由与通信的实现方式
 - 各应用的构建与测试命令
 
+## 已完成阶段
+
+| 阶段 | 内容 | 核心文件 |
+|------|------|---------|
+| 阶段一 | 注册表 + 路由调度 + 生命周期 + 脚本加载 | `registry.js`, `router.js`, `lifecycle.js`, `loader.js` |
+| 阶段二 | JS 沙箱（Proxy 隔离全局变量） | `sandbox.js` |
+| 阶段三 | CSS 隔离（Shadow DOM + Scoped CSS） | `css-sandbox.js` |
+
+## 启动方式
+
+```bash
+npx serve packages -p 3000 --cors
+# 访问 http://localhost:3000/main-app/
+```
+
+## 子应用注册 API
+
+```js
+registerMicroApp({
+  name: 'app-vue',
+  entry: '/app-vue/index.js',
+  container: '#app-container',
+  activeRule: '/vue',
+  cssIsolation: 'shadow-dom',  // 'shadow-dom' | 'scoped' | false
+})
+```
+
 ## 约束
 
 1. 使用中文与我对话

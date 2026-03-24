@@ -80,6 +80,17 @@
       color: #92400e;
       line-height: 1.6;
     }
+
+    /*
+     * ⚡ CSS 隔离演示：主应用故意设置 h2 为红色
+     * 如果 CSS 隔离有效，子应用内的 h2 应该显示各自的颜色（绿色/蓝色），
+     * 而不是被这条规则覆盖为红色。
+     * 打开 DevTools → 元素面板，可以看到子应用在 shadow-root 内，
+     * 这条规则无法穿透进去。
+     */
+    h2 {
+      color: #e53e3e;
+    }
   </style>
 </head>
 <body>
@@ -96,6 +107,7 @@
   <div class="main-content">
     <div class="info-box">
       💡 点击上方导航链接，观察子应用的加载、挂载和卸载过程。打开浏览器控制台（F12）可以看到完整的生命周期日志。
+      <br>🎨 <strong>阶段三 CSS 隔离验证</strong>：主应用设置了 <code>h2 { color: red }</code>，若子应用标题颜色正确（绿/蓝），说明 Shadow DOM 隔离生效。在 DevTools 元素面板中可以看到 <code>#app-container</code> 下的 <code>#shadow-root</code>。
     </div>
 
     <!-- 子应用挂载容器：这是留给子应用渲染内容的"插槽" -->

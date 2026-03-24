@@ -36,19 +36,25 @@ export async function mountApp(app) {
   app.status = 'MOUNTING'
   console.log(`[MicroFE] ${app.name} → mount`)
 
-  // 获取容器 DOM 节点，传给子应用，让子应用自行渲染
-  const container = document.querySelector(app.container)
-  if (!container) {
+  // 获取宿主容器 DOM 节点（主应用 HTML 中的 #app-container 等）
+  const hostEl = document.querySelector(app.container)
+  if (!hostEl) {
     throw new Error(`[MicroFE] 找不到子应用 "${app.name}" 的容器: ${app.container}`)
   }
 
+  // CSS 隔离：根据模式决定子应用实际挂载的目标节点
+  //   - shadow-dom 模式：挂载到 shadowRoot（浏览器原生隔离）
+  //   - scoped 模式：挂载到 hostEl，但样式规则会自动加作用域前缀
+  //   - 无隔离（false）：直接挂载到 hostEl
+  const mountTarget = app.cssSandbox ? app.cssSandbox.createContainer(hostEl) : hostEl
+
   try {
-    // 挂载前激活沙箱：后续子应用代码中的 window 读写都走 proxy
+    // 挂载前激活 JS 沙箱：后续子应用代码中的 window 读写都走 proxy
     app.sandbox.activate()
-    // props 是传给子应用的上下文，container 是最关键的
-    await app.lifecycle.mount({ container, name: app.name })
+    // 将实际挂载目标传给子应用（shadow-dom 模式下为 shadowRoot）
+    await app.lifecycle.mount({ container: mountTarget, name: app.name })
     app.status = 'MOUNTED'
-    console.log(`[MicroFE] ${app.name} 已挂载`)
+    console.log(`[MicroFE] ${app.name} 已挂载${app.cssIsolation ? `（CSS 隔离：${app.cssIsolation}）` : ''}`)
   } catch (e) {
     app.status = 'MOUNT_ERROR'
     throw e
@@ -63,11 +69,17 @@ export async function unmountApp(app) {
   app.status = 'UNMOUNTING'
   console.log(`[MicroFE] ${app.name} → unmount`)
 
-  const container = document.querySelector(app.container)
+  const hostEl = document.querySelector(app.container)
+
+  // 子应用卸载时，需要知道当初挂载到哪个节点，才能正确清理
+  // shadow-dom 模式：子应用渲染在 shadowRoot 里，要传 shadowRoot 给 unmount
+  // 其他模式：直接传 hostEl
+  const mountTarget = app.cssSandbox && hostEl?.shadowRoot ? hostEl.shadowRoot : hostEl
 
   try {
-    await app.lifecycle.unmount({ container, name: app.name })
-    // 卸载后停用沙箱：fakeWindow 中的变量被保留，下次 mount 时恢复
+    await app.lifecycle.unmount({ container: mountTarget, name: app.name })
+    // 卸载后：先清理 CSS 沙箱（移除 shadow 内容或 scoped 样式），再停用 JS 沙箱
+    app.cssSandbox?.destroy()
     app.sandbox.deactivate()
     app.status = 'NOT_MOUNTED'
     console.log(`[MicroFE] ${app.name} 已卸载`)

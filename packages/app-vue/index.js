@@ -36,17 +36,41 @@
     window.__APP_NAME__ = 'app-vue';
     console.log('[app-vue] mount: 渲染 Vue 应用到容器');
 
+    // ─── CSS 隔离演示 ────────────────────────────────────────────────────────
+    // 注入 <style> 到 container（Shadow DOM 模式下即 shadowRoot）。
+    // 这里故意设置 h2 为绿色，与主应用的"h2 { color: red }"形成冲突。
+    // Shadow DOM 隔离生效时：
+    //   - 主应用的红色规则无法穿透进 shadow root，子应用 h2 显示绿色 ✓
+    //   - 子应用的绿色规则不会泄漏到 shadow root 外，主应用 h2 仍为红色 ✓
+    const style = document.createElement('style');
+    style.textContent = `
+      h2 {
+        color: #42b883;   /* 绿色，Vue 品牌色 */
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 20px;
+      }
+      .app-vue-root {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+    `;
+    container.appendChild(style);
+    // ────────────────────────────────────────────────────────────────────────
+
     // 模拟 Vue 渲染：创建 DOM 结构并插入容器
     appInstance = document.createElement('div');
     appInstance.className = 'app-vue-root';
     appInstance.innerHTML = `
       <div style="padding: 20px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #42b883;">
-        <h2 style="color: #42b883; margin: 0 0 10px 0;">🟢 Vue 子应用</h2>
+        <h2 style="margin: 0 0 10px 0;">🟢 Vue 子应用</h2>
         <p style="margin: 0; color: #555;">这里是 Vue 子应用的内容区域。</p>
         <p style="margin: 8px 0 0 0; color: #888; font-size: 14px;">当前路由：<code>${window.location.hash}</code></p>
         <p style="margin: 8px 0 0 0; font-size: 14px; background: #e6f7ef; padding: 6px 10px; border-radius: 4px;">
-          🔒 沙箱隔离验证：<code>window.__APP_NAME__ = "${window.__APP_NAME__}"</code>
+          🔒 JS 沙箱验证：<code>window.__APP_NAME__ = "${window.__APP_NAME__}"</code>
           <br><small style="color:#888;">沙箱生效时此值为 "app-vue"，真实 window 上不存在该变量</small>
+        </p>
+        <p style="margin: 8px 0 0 0; font-size: 14px; background: #dff0d8; padding: 6px 10px; border-radius: 4px;">
+          🎨 CSS 隔离验证：此 h2 颜色由子应用内部的 &lt;style&gt; 控制（绿色 #42b883）
+          <br><small style="color:#888;">主应用设置了 h2 { color: red }，若隔离生效则此处不受影响</small>
         </p>
         <div style="margin-top: 16px;">
           <button id="vue-counter-btn" style="padding: 8px 16px; background: #42b883; color: white; border: none; border-radius: 4px; cursor: pointer;">

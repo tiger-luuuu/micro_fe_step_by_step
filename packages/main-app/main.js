@@ -13,20 +13,22 @@
 import { registerMicroApp, start } from '/core/src/index.js'
 
 // 注册子应用
-// activeRule: 当 URL hash 以 '/vue' 开头时，激活 app-vue
+// cssIsolation: 'shadow-dom'（默认）| 'scoped' | false
+// 这里显式传入 'shadow-dom'，让代码意图更清晰；不传时行为相同
 registerMicroApp({
   name: 'app-vue',
   entry: '/app-vue/index.js',
   container: '#app-container',
   activeRule: '/vue',
+  cssIsolation: 'shadow-dom',
 })
 
-// 当 URL hash 以 '/react' 开头时，激活 app-react
 registerMicroApp({
   name: 'app-react',
   entry: '/app-react/index.js',
   container: '#app-container',
   activeRule: '/react',
+  cssIsolation: 'shadow-dom',
 })
 
 // 启动框架！调用后框架开始监听路由，并根据当前 URL 立即调度
