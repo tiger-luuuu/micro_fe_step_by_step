@@ -35,9 +35,12 @@ export class Sandbox {
     this.appName = appName
     this.active = false
 
-    // 子应用专属的全局变量存储空间
-    // 用 Object.create(window) 让它继承 window，这样读取 document/fetch 等原生 API 时能正常找到
-    this.fakeWindow = Object.create(window)
+    // 子应用专属的全局变量存储空间。
+    // 用普通空对象（不继承 window），所有对原生 API 的访问都通过 proxy 的 get 透传到真实 window。
+    // 注意：不能用 Object.create(window)——window 是浏览器的 WindowProxy exotic object，
+    // 以它为原型的对象在访问 native getter（如 location、document）时会触发 Illegal invocation，
+    // 因为这些 getter 要求接收者（receiver）必须是真实的 window，而不是一个继承它的普通对象。
+    this.fakeWindow = Object.create(null)
 
     // 记录子应用在沙箱内新增/修改的 key，unmount 时用于清理真实 window（针对不走 proxy 的情况）
     this.addedPropsMap = new Map()
@@ -53,20 +56,28 @@ export class Sandbox {
        * 拦截读操作：window.xxx
        * 优先读 fakeWindow，读不到再从真实 window 上取
        */
-      get(target, key) {
+      get(target, key, receiver) {
         // 几个特殊 key 需要返回真实值，否则一些浏览器 API 会行为异常
         if (key === 'window' || key === 'self' || key === 'globalThis') {
-          return target  // 返回 fakeWindow 本身，让子应用认为它就是 window
+          return receiver  // 返回 proxy 本身，让子应用认为它就是 window，且后续属性访问仍走 proxy
         }
         if (key === 'top' || key === 'parent') {
           return window[key]  // 安全相关，不劫持
         }
 
-        const value = key in target ? target[key] : window[key]
+        // 注意：不能用 `key in target`，因为 fakeWindow = Object.create(window)，
+        // window 上所有属性都能通过原型链在 target 上找到（in 返回 true），
+        // 但 target[key] 的接收者是 fakeWindow 而非真实 window，
+        // 对 document.createElement 等 native 方法会触发 "Illegal invocation"。
+        // 正确做法：只有 fakeWindow 自身（hasOwnProperty）写过的 key 才从 target 读，
+        // 其余一律从真实 window 读。
+        const value = Object.prototype.hasOwnProperty.call(target, key) ? target[key] : window[key]
 
-        // 如果是函数（如 setTimeout、fetch），需要绑定到真实 window，
-        // 否则会报 "Illegal invocation" 错误
-        if (typeof value === 'function' && !value.prototype) {
+        // 如果是从真实 window 上取到的函数（如 setTimeout、fetch、addEventListener），
+        // 需要绑定到真实 window，否则会报 "Illegal invocation" 错误。
+        // 注意：不能用 !value.prototype 判断（构造函数也有 prototype，箭头函数没有），
+        // 正确做法是：只要是 window 上的函数，一律绑定到真实 window。
+        if (key in window && typeof window[key] === 'function') {
           return value.bind(window)
         }
         return value
@@ -77,7 +88,7 @@ export class Sandbox {
        * 写操作只落到 fakeWindow，真实 window 不受影响
        */
       set(target, key, value) {
-        if (!target.hasOwnProperty(key)) {
+        if (!Object.prototype.hasOwnProperty.call(target, key)) {
           // 记录新增的 key，方便 deactivate 时清理
           // （对于某些绕过 proxy 直接写 window 的情况，这是兜底）
         }
@@ -118,8 +129,8 @@ export class Sandbox {
   _getOwnProps() {
     const ownProps = {}
     for (const key of Object.getOwnPropertyNames(this.fakeWindow)) {
-      // 过滤掉从 Object.create(window) 继承的原型属性
-      if (this.fakeWindow.hasOwnProperty(key)) {
+      // fakeWindow = Object.create(null)，所有 key 都是自身属性，这里用 hasOwnProperty 做双重保险
+      if (Object.prototype.hasOwnProperty.call(this.fakeWindow, key)) {
         ownProps[key] = this.fakeWindow[key]
       }
     }

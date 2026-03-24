@@ -43,6 +43,8 @@ export async function mountApp(app) {
   }
 
   try {
+    // 挂载前激活沙箱：后续子应用代码中的 window 读写都走 proxy
+    app.sandbox.activate()
     // props 是传给子应用的上下文，container 是最关键的
     await app.lifecycle.mount({ container, name: app.name })
     app.status = 'MOUNTED'
@@ -65,6 +67,8 @@ export async function unmountApp(app) {
 
   try {
     await app.lifecycle.unmount({ container, name: app.name })
+    // 卸载后停用沙箱：fakeWindow 中的变量被保留，下次 mount 时恢复
+    app.sandbox.deactivate()
     app.status = 'NOT_MOUNTED'
     console.log(`[MicroFE] ${app.name} 已卸载`)
   } catch (e) {

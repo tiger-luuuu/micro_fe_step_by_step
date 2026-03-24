@@ -6,6 +6,8 @@
  *   NOT_LOADED → LOADING → NOT_BOOTSTRAPPED → BOOTSTRAPPING → NOT_MOUNTED → MOUNTING → MOUNTED → UNMOUNTING → NOT_MOUNTED
  */
 
+import { Sandbox } from '/core/src/sandbox.js'
+
 // 所有已注册子应用的列表
 const apps = []
 
@@ -33,6 +35,9 @@ export function registerMicroApp(config) {
     status: 'NOT_LOADED',
     // 加载完成后，子应用的生命周期函数会存在这里
     lifecycle: null,
+    // 每个子应用独享一个沙箱实例，在整个子应用生命周期内复用
+    // 沙箱的 fakeWindow 会在 deactivate 后保留，下次 activate 时恢复
+    sandbox: new Sandbox(config.name),
   })
 
   console.log(`[MicroFE] 注册子应用: ${config.name}`)

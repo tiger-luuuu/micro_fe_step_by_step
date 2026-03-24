@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 架构目标
 
 本项目旨在探索并实现微前端的核心概念，包括：
+
 - 子应用加载与生命周期管理
 - 应用隔离（JS 沙箱、CSS 隔离）
 - 应用间通信机制
@@ -20,7 +21,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 随项目演进更新本文档
 
 随着代码库的增长，本文件应持续更新以反映：
+
 - 所选的微前端实现方案（如 single-spa、模块联邦、自定义 iframe 方案等）
 - 如何启动主应用和各子应用
 - 应用间路由与通信的实现方式
 - 各应用的构建与测试命令
+
+## 约束
+
+1. 使用中文与我对话
+2. 生成的文档都使用中文
